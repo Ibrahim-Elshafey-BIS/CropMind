@@ -1,527 +1,397 @@
-🌱 CropMind — AI-Powered Digital Operating System for Smart Agriculture
+# 🌱 CropMind
 
-CropMind is an integrated AI-powered digital operating system designed to support smart agriculture in Egypt by combining Artificial Intelligence, Machine Learning, Computer Vision, IoT, predictive analytics, and workflow automation into a unified platform.
+### An Integrated AI Digital Operating System for Smart Agriculture in Egypt
 
-The system is designed to help farm managers and agricultural stakeholders monitor crop health, optimize resources, detect anomalies, forecast crop yields and market prices, and automate critical agricultural workflows.
+*Unifying field telemetry, computer-vision diagnostics, predictive analytics, autonomous agents, and workflow automation into one platform.*
 
-🚜 Overview
+---
 
-Agriculture plays a major role in Egypt's economy and employment, while Egyptian farms face several challenges including:
+## 📑 Table of Contents
 
-Water scarcity and irrigation losses
-Climate uncertainty
-Soil degradation and salinization
-Crop diseases and late detection
-Agricultural productivity gaps
-Input cost increases
-Commodity price volatility
-Fragmented farm management systems
+- [Overview](#-overview)
+- [Key Features](#-key-features)
+- [Problem Definition](#-problem-definition)
+- [Motivation](#-motivation)
+- [Objectives](#-objectives)
+- [System Architecture](#️-system-architecture)
+- [AI Agents](#-ai-agents)
+- [Farm DNA Score](#-farm-dna-score)
+- [Technology Stack](#-technology-stack)
+- [AI/ML Methodology](#-aiml-methodology)
+- [Experimental Results](#-experimental-results)
+- [Automation](#️-automation)
+- [Repository Structure](#-repository-structure)
+- [Future Work](#-future-work)
+- [Team](#-team)
+- [Academic Context](#-academic-context)
+- [References](#-references)
+- [Project Documentation](#-project-documentation)
+- [License](#-license)
 
-Traditional agricultural software often focuses on individual tasks such as disease detection, weather monitoring, accounting, or sensor logging.
+---
 
-CropMind addresses this fragmentation by bringing multiple agricultural intelligence capabilities into one integrated digital operating system.
+## 🌾 Overview
 
-🎯 Main Objectives
+**CropMind** is an integrated AI-powered digital operating system designed for smart agriculture in Egypt. Rather than relying on fragmented tools that each perform an isolated task, CropMind unifies field data, AI models, predictive analytics, autonomous agents, and workflow automation into a single platform.
 
-CropMind aims to provide an intelligent platform capable of:
+The system is organized around three operational pillars:
 
-🌿 Monitoring crop health
-🦠 Detecting plant diseases using Computer Vision
-💧 Optimizing agricultural resources
-📊 Predicting crop yields
-📈 Forecasting agricultural commodity prices
-🚨 Detecting abnormal sensor behavior
-🧬 Calculating a composite Farm DNA Score
-🤖 Providing AI-powered agricultural assistance
-⚙️ Automating agricultural workflows
-📡 Integrating real-time IoT telemetry
-📱 Supporting both farm managers and field workers
-🏗️ System Architecture
+| Pillar | Focus Areas |
+|---|---|
+| 🌱 **Farm** | Crop health, disease detection, IoT telemetry, water/resource monitoring |
+| 💼 **Business** | Finance, inventory, workforce management, Farm DNA score |
+| 📈 **Market** | Price forecasting, demand forecasting, market intelligence, sales & harvesting insights |
 
-CropMind follows a five-layer digital operating system architecture.
+---
 
-┌─────────────────────────────────────────────┐
-│              UX & Automation                │
-│ Dashboard • Mobile App • n8n Workflows     │
-└─────────────────────────────────────────────┘
-                      │
-┌─────────────────────────────────────────────┐
-│             Intelligence Engine             │
-│ AI Agents • CNN • XGBoost • Prophet        │
-│ Isolation Forest • Farm DNA                 │
-└─────────────────────────────────────────────┘
-                      │
-┌─────────────────────────────────────────────┐
-│             Backend Platform                │
-│ FastAPI • PostgreSQL • Business Logic      │
-└─────────────────────────────────────────────┘
-                      │
-┌─────────────────────────────────────────────┐
-│            Communication Layer              │
-│              MQTT / Mosquitto              │
-└─────────────────────────────────────────────┘
-                      │
-┌─────────────────────────────────────────────┐
-│          Field Data Acquisition             │
-│ ESP32 • Sensors • Crop Images • Telemetry  │
-└─────────────────────────────────────────────┘
-🧠 AI & Machine Learning
+## ✨ Key Features
 
-CropMind combines multiple AI and Machine Learning technologies to provide agricultural intelligence.
+- 📡 **IoT Field Telemetry** — ESP32-based sensor network for real-time field data acquisition
+- 👁️ **Computer Vision Diagnostics** — CNN-based plant disease classification via TensorFlow Lite
+- 🧠 **Predictive Machine Learning** — Crop yield prediction, price forecasting, and demand forecasting
+- 🚨 **Anomaly Detection** — Isolation Forest-based detection of sensor drift and telemetry outliers
+- 🤖 **Multi-Agent Intelligence** — 7 specialized autonomous AI agents covering farm, finance, market, and workforce domains
+- 🧬 **Farm DNA Score** — A composite index consolidating six operational health dimensions
+- ⚙️ **Workflow Automation** — Event-driven automation via n8n for alerts and reporting
+- 📱 **Dual Interfaces** — React web dashboard for managers and a React Native mobile app for field workers
 
-🌿 Plant Disease Detection
+---
 
-A Convolutional Neural Network (CNN) is deployed through TensorFlow Lite for plant disease classification.
+## 🧩 Problem Definition
 
-Dataset: PlantVillage
-Number of classes: 23
-Dataset size: 34,500 images
-Model deployment: TensorFlow Lite
-Quantization: INT8
-Target: On-device plant disease classification
-Result
+Existing agricultural management solutions are often fragmented. Disease detection, weather alerts, accounting, sensor monitoring, and farm management are frequently handled by separate, disconnected tools — creating data silos and forcing farm managers to switch between systems constantly.
 
-94% classification accuracy
+**Key challenges addressed by CropMind:**
 
-🌾 Crop Yield Prediction
+- Water scarcity and irrigation inefficiency
+- Climate uncertainty
+- Late disease detection
+- Crop productivity gaps
+- Agricultural market volatility
+- Fragmented farm management systems
 
-CropMind uses an XGBoost gradient-boosted regression model to estimate crop yield.
+> **Central Research Problem:** The absence of an integrated, multi-agent digital operating system capable of unifying telemetry, vision diagnostics, predictive ML, finance, operations, and market intelligence in one platform.
 
-The model uses agricultural and environmental features including:
+---
 
-Soil Nitrogen
-Soil Phosphorus
-Soil Potassium
-Soil moisture
-Weather-related features
-Result
+## 🎯 Motivation
 
-R² = 0.91
+CropMind is motivated by real agricultural challenges in Egypt and is aligned with **Egypt Vision 2030** and the country's digital transformation direction in agriculture.
 
-📈 Price Forecasting
+| Contextual Figure | Value |
+|---|---:|
+| Agriculture's contribution to Egypt's GDP | ~11.5% |
+| Agriculture's share of national employment | > 28% |
+| Agricultural employment in rural governorates | > 45% |
+| Nile's share of renewable water supply | > 95% |
+| Water loss under traditional flood irrigation | > 60% |
+| Crop yield gap vs. international benchmarks | 30–40% |
 
-The price forecasting subsystem combines:
+Additional motivating factors include climate and environmental uncertainty, input cost inflation, fertilizer price shocks, and agricultural commodity price volatility.
 
-Prophet for trend and seasonality
-LSTM for short-term residual modeling
+---
 
-The system generates forecasts for agricultural commodities including:
+## 🎯 Objectives
 
-Wheat
-Tomato
-Potato
-Onion
-Brinjal
-Result
+- Architect a **5-layer** agricultural digital operating system
+- Implement an autonomous topology of **7 specialized AI agents**
+- Develop a computer-vision pathology engine for early plant disease diagnosis
+- Develop machine-learning models for yield prediction
+- Implement price forecasting capabilities
+- Implement demand forecasting capabilities
+- Implement anomaly detection for agricultural telemetry
+- Formulate the **Farm DNA Score** as a composite farm health/operational index
+- Implement event-driven workflow automation using **n8n**
+- Integrate farm, business, and market intelligence into one platform
 
-Mean Absolute Error below 10%
+---
 
-🚨 Anomaly Detection
+## 🏗️ System Architecture
 
-CropMind uses Isolation Forest to detect abnormal agricultural telemetry.
+CropMind follows a five-layer architecture, from field-level data acquisition to user-facing automation:
 
-The system can identify:
+```mermaid
+flowchart TD
+    A["📡 Field Sensors / ESP32<br/>(Layer 1: Field Data Acquisition)"] --> B["🔗 MQTT / Mosquitto<br/>(Layer 2: Communication)"]
+    B --> C["⚙️ FastAPI Backend<br/>(Layer 3: Backend)"]
+    C --> D["🗄️ PostgreSQL<br/>(Layer 3: Backend)"]
+    D --> E["🧠 AI & ML Intelligence Engine<br/>(Layer 4: Agents, CNN, XGBoost, Prophet, LSTM, Isolation Forest)"]
+    E --> F["📊 Dashboard / 📱 Mobile App<br/>(Layer 5: User Experience)"]
+    F --> G["🔁 n8n Automation & Alerts<br/>(Layer 5: Automation)"]
+```
 
-Sensor anomalies
-Telemetry outliers
-Unexpected sensor behavior
-Potential sensor drift
+### Layer Breakdown
 
-This supports real-time monitoring and early intervention.
+| Layer | Name | Components |
+|---|---|---|
+| 1 | Field Data Acquisition | IoT sensors, ESP32 microcontrollers, field telemetry, plant images |
+| 2 | Communication | MQTT, Mosquitto broker |
+| 3 | Backend | Python, FastAPI, PostgreSQL |
+| 4 | Intelligence Engine | AI agents, CNN, XGBoost, Prophet, LSTM, Isolation Forest |
+| 5 | User Experience & Automation | React dashboard, React Native / Expo mobile app, n8n workflow automation |
 
-🤖 Multi-Agent AI Engine
+---
 
-CropMind incorporates a multi-agent AI architecture consisting of 7 specialized autonomous agents.
+## 🤖 AI Agents
 
-Specialized Agents
-Farm Intelligence Agent
-Resource Optimization Agent
-Finance Agent
-Market Intelligence Agent
-Inventory Agent
-Workforce Agent
-Arabic Farm Copilot
+CropMind employs **7 specialized autonomous agents**, each responsible for a distinct operational domain:
 
-The agents are designed to address different agricultural operational domains while contributing to a unified intelligence layer.
+<details>
+<summary><strong>View agent roles</strong></summary>
 
-🧬 Farm DNA Score
+| # | Agent | High-Level Role |
+|---|---|---|
+| 1 | **Farm Intelligence Agent** | Monitors crop and field health signals across the farm |
+| 2 | **Resource Optimization Agent** | Supports efficient use of resources such as water and inputs |
+| 3 | **Finance Agent** | Supports financial intelligence for farm operations |
+| 4 | **Market Intelligence Agent** | Surfaces market trends and pricing intelligence |
+| 5 | **Inventory Agent** | Supports inventory tracking and management |
+| 6 | **Workforce Agent** | Supports workforce coordination and management |
+| 7 | **Arabic Farm Copilot** | Provides an Arabic-language conversational assistant for farm users |
 
-CropMind introduces the Farm DNA Score, a composite indicator designed to summarize the overall operational condition of a farm.
+</details>
 
-The score combines six dimensions:
+---
 
-Dimension	Weight
-Crop Health	22%
-Soil Health	20%
-Water Efficiency	18%
-Operational Efficiency	15%
-Market Readiness	13%
-Risk Exposure	12%
-Demonstration Result
+## 🧬 Farm DNA Score
 
-84% overall Farm DNA Score
+CropMind introduces a composite **Farm DNA Score** that consolidates multiple operational dimensions into a single indicator of farm health and performance.
 
-📡 IoT & Real-Time Monitoring
+| Dimension | Weight |
+|---|---:|
+| Crop Health | 22% |
+| Soil Health | 20% |
+| Water Efficiency | 18% |
+| Operational Efficiency | 15% |
+| Market Readiness | 13% |
+| Risk Exposure | 12% |
+| **Total** | **100%** |
 
-CropMind integrates IoT devices for agricultural telemetry.
+---
 
-Hardware
-ESP32 microcontrollers
-Agricultural sensors
-Communication
-MQTT
-Mosquitto Broker
+## 🛠️ Technology Stack
 
-Sensor data can be transmitted to the backend platform where it can be processed by the intelligence and anomaly-detection layers.
+<table>
+<tr>
+<td valign="top">
 
-⚙️ Workflow Automation
+**📱 Frontend**
+- React 18
+- React Native
+- Expo
 
-CropMind uses n8n Community Edition as its event-driven workflow automation engine.
+**⚙️ Backend**
+- Python 3.11
+- FastAPI 0.100+
 
-The system includes five main workflows:
+**🗄️ Database**
+- PostgreSQL 15
 
-Daily Health Check
-Weather Alert
-Disease Outbreak
-Price Spike
-Weekly Report
-Automation Result
+</td>
+<td valign="top">
 
-100% workflow trigger success
+**🤖 AI / LLM**
+- LangChain
+- Groq API
+- Llama 3 70B
+- Arabic Farm Copilot
 
-Observed workflow latency ranged from:
+**🧠 Machine Learning**
+- XGBoost
+- Prophet
+- Scikit-Learn
+- LSTM
+- Isolation Forest
 
-0.8 seconds — Weather Alert
-2.4 seconds — Weekly Report
-💻 Technology Stack
-Frontend
-React 18
-React Native
-Expo
-Manager Web Dashboard
-Worker Mobile Application
-Backend
-Python 3.11
-FastAPI
-Asynchronous REST APIs
-PostgreSQL 15
-Artificial Intelligence
-LangChain
-Groq API
-Llama 3 70B
-Multi-Agent AI
-Arabic Farm Copilot
-Machine Learning
-XGBoost
-Prophet
-Scikit-Learn
-Isolation Forest
-LSTM
-Computer Vision
-TensorFlow
-TensorFlow Lite
-CNN
-INT8 Quantization
-IoT
-ESP32
-MQTT
-Mosquitto
-Automation
-n8n Community Edition
-📊 Experimental Results
-Component	Model / Technology	Result
-Plant Disease Classification	CNN + TensorFlow Lite	94% Accuracy
-Crop Yield Prediction	XGBoost	R² = 0.91
-Price Forecasting	Prophet + LSTM	MAE < 10%
-Anomaly Detection	Isolation Forest	Real-time detection
-Farm DNA Score	Weighted Composite Index	84%
-Workflow Automation	n8n	100% trigger success
-🌱 Three Operational Pillars
+</td>
+<td valign="top">
 
-CropMind organizes agricultural intelligence around three major operational pillars.
+**👁️ Computer Vision**
+- TensorFlow Lite 2.12
+- CNN
+- INT8 quantization
 
-🌾 Farm
-Crop health
-Disease detection
-IoT telemetry
-Water management
-Soil monitoring
-💼 Business
-Finance
-Inventory
-Workforce
-Operational efficiency
-Farm DNA
-📈 Market
-Price forecasting
-Market intelligence
-Price spike detection
-Sales
-Harvesting decisions
-📁 Project Structure
+**📡 IoT**
+- ESP32
+- MQTT
+- Mosquitto
+
+**⚙️ Automation**
+- n8n Community Edition
+
+</td>
+</tr>
+</table>
+
+> **Note:** The repository also contains code in Python, JavaScript, C++, PL/SQL, Batch, and Shell. Not every language listed is part of the core AI pipeline — some support infrastructure, tooling, or scripting.
+
+---
+
+## 🧠 AI/ML Methodology
+
+### A. Plant Disease Detection
+- CNN-based plant disease classification
+- Deployed via TensorFlow Lite with INT8 quantization
+- 23-class classification on the PlantVillage dataset (34,500 images)
+- **Result:** 94% accuracy (baseline target: 85%)
+
+### B. Crop Yield Prediction
+- **Model:** XGBoost gradient-boosted ensemble regression
+- **Features:** Soil NPK, soil moisture, weather features
+- **Result:** R² = 0.91
+
+### C. Price Forecasting
+- **Approach:** Prophet additive trend/seasonality model, hybridized with LSTM for short-term residuals
+- **Result:** Mean Absolute Error (MAE) below 10%
+
+### D. Anomaly Detection
+- **Model:** Isolation Forest
+- **Purpose:** Detect sensor drift, telemetry outliers, and support real-time anomaly detection
+
+### E. Demand Forecasting
+- Gradient boosting-based demand forecasting models
+- Available model examples: Maize, Tomato, Onion, Potato
+
+---
+
+## 📊 Experimental Results
+
+| Component | Model / Method | Result |
+|---|---|---|
+| Plant Disease Classification | CNN / TensorFlow Lite | 94% accuracy |
+| Crop Yield Regression | XGBoost | R² = 0.91 |
+| Price Forecasting | Prophet + LSTM | MAE < 10% |
+| Anomaly Detection | Isolation Forest | Real-time sensor anomaly detection |
+| Farm DNA Score | Weighted composite index | 84% demonstration score |
+| Event Automation | n8n workflows | 100% workflow trigger success |
+
+---
+
+## ⚙️ Automation
+
+CropMind uses **n8n Community Edition** for event-driven workflow orchestration, with 5 defined workflows:
+
+1. Daily Health Check
+2. Weather Alert
+3. Disease Outbreak
+4. Price Spike
+5. Weekly Report
+
+| Metric | Value |
+|---|---|
+| Workflow trigger success rate | 100% |
+| Weather Alert latency | 0.8 seconds |
+| Weekly Report latency | 2.4 seconds |
+
+---
+
+## 📁 Repository Structure
+
+```
 CropMind/
-│
-├── ai_engine/
-│   └── agents/
-│       ├── farm intelligence
-│       ├── resource optimization
-│       ├── finance
-│       ├── market intelligence
-│       ├── inventory
-│       ├── workforce
-│       └── farm copilot
-│
-├── computer_vision/
-│   └── models/
-│       └── model_unquant.tflite
-│
-├── docs/
-│   ├── demand_forecasting_models.ipynb
-│   └── project documentation
-│
-├── frontend/
-│
-├── infrastructure/
-│
-├── iot/
-│
-├── ml_models/
-│   ├── anomaly_detection/
-│   │   └── models/
-│   │
-│   ├── demand_forecasting/
-│   │   └── models/
-│   │
-│   ├── price_forecasting/
-│   │   ├── models/
-│   │   └── outputs/
-│   │
-│   └── yield_prediction/
-│
-├── mobile/
-│
+├── ai_engine/            # AI agent logic
+├── computer_vision/      # Plant disease classification models & assets
+├── docs/                 # Documentation and notebooks
+├── frontend/             # React web dashboard
+├── infrastructure/       # Infrastructure-related configuration
+├── iot/                  # ESP32 / IoT telemetry code
+├── ml_models/            # Trained ML model artifacts (yield, price, demand, anomaly)
+├── mobile/               # React Native / Expo mobile application
 ├── .gitignore
 ├── LICENSE
 ├── run_backend.bat
 ├── run_frontend.bat
 └── start.bat
-📦 Main Machine Learning Models
+```
 
-The repository contains trained models for the major AI components of CropMind.
+<details>
+<summary><strong>📦 Notable ML/CV Artifacts</strong></summary>
 
-Yield Prediction
-ml_models/yield_prediction/yield_model.pkl
-Anomaly Detection
-ml_models/anomaly_detection/models/anomaly_detector.pkl
-Demand Forecasting
-ml_models/demand_forecasting/models/
+**Yield Prediction**
+- `ml_models/yield_prediction/yield_model.pkl`
 
-Including models for:
+**Computer Vision**
+- `computer_vision/models/model_unquant.tflite`
 
-Maize
-Tomato
-Onion
-Potato
-Price Forecasting
-ml_models/price_forecasting/models/
+**Anomaly Detection**
+- `ml_models/anomaly_detection/models/anomaly_detector.pkl`
 
-Including:
+**Demand Forecasting**
+- `ml_models/demand_forecasting/models/Maize_gbm.pkl`
+- `ml_models/demand_forecasting/models/Tomato_gbm.pkl`
+- `ml_models/demand_forecasting/models/Onion_gbm.pkl`
+- `ml_models/demand_forecasting/models/Potato_gbm.pkl`
 
-Tomato LSTM
-Onion LSTM
-Brinjal Prophet
-Wheat Prophet
-Potato Prophet
+**Price Forecasting**
+- `ml_models/price_forecasting/models/Tomato_lstm.h5`
+- `ml_models/price_forecasting/models/Onion_lstm.h5`
+- `ml_models/price_forecasting/models/Brinjal_prophet.pkl`
+- `ml_models/price_forecasting/models/Wheat_prophet.pkl`
+- `ml_models/price_forecasting/models/Potato_prophet.pkl`
 
-Forecast visualization outputs are available under:
-
-ml_models/price_forecasting/outputs/
-🚀 Getting Started
-1. Clone the Repository
-git clone https://github.com/Ibrahim-Elshafey-BIS/CropMind.git
-
-Then:
-
-cd CropMind
-2. Backend
+**Forecast Outputs**
+- `Brinjal_forecast.png`
+- `Wheat_forecast.png`
+- `Tomato_forecast.png`
+- `Potato_forecast.png`
+- `Onion_forecast.png`
 
-Make sure Python 3.11 is installed.
+**Documentation / Notebooks**
+- `docs/demand_forecasting_models.ipynb`
 
-Install the backend dependencies:
+</details>
 
-pip install -r requirements.txt
+---
 
-Then start the backend using:
+## 🔭 Future Work
 
-run_backend.bat
-3. Frontend
+> The following items are **proposed future directions** and are **not** currently implemented features.
 
-Install the frontend dependencies:
+- Egyptian crop pathology dataset with 100,000+ images captured under natural sunlight
+- Graph Neural Network (GNN) spatial yield estimation across Nile Delta governorates
+- Transformer-based time-series architectures for commodity price forecasting
+- Longitudinal Farm DNA validation across multi-season commercial field trials
+- Hands-free Arabic speech recognition
+- Offline LLM quantization for field workers
+- Zero-trust cybersecurity framework for smart-farm telemetry networks
 
-npm install
+---
 
-Then start the development server:
+## 🎓 Academic Context
 
-run_frontend.bat
-4. Start the System
+| Field | Details |
+|---|---|
+| **Project Type** | 9-Month Professional Diploma Project |
+| **Track** | Applied Artificial Intelligence and Data Analytics |
+| **Supervisor** | Dr. Ali Khalifa |
+| **Track Head** | *Not specified* |
 
-If the complete startup script is configured for your environment:
+---
 
-start.bat
-🖥️ Platform Components
+## 📖 References
 
-CropMind provides two main user-facing interfaces:
+1. Egyptian Government, "Egypt Vision 2030: Sustainable Development Strategy – Agricultural Pillar," Ministry of Planning, 2016.
+2. D. P. Hughes and M. Salathé, "An open access repository of images on plant health," arXiv:1511.08060, 2015.
+3. T. Chen and C. Guestrin, "XGBoost: A scalable tree boosting system," ACM SIGKDD, 2016.
+4. S. J. Taylor and B. Letham, "Forecasting at scale," The American Statistician, vol. 72, 2018.
+5. F. T. Liu, K. M. Ting, and Z.-H. Zhou, "Isolation forest," IEEE ICDM, 2008.
+6. S. Wolfert, L. Ge, C. Verdouw, and M.-J. Bogaardt, "Big data in smart farming – A review," Agricultural Systems, 2017.
+7. S. Yao et al., "ReAct: Synergizing reasoning and acting in language models," ICLR, 2023.
+8. H. Chase, "LangChain: Building applications with LLMs through composability," 2022.
+9. World Bank, "Egypt Economic Monitor: Strengthening Resource Allocation," 2022.
+10. M. S. Farooq et al., "A survey on IoT-based smart agriculture technologies," IEEE Access, 2019.
 
-👨‍💼 Manager Dashboard
+> The full reference list of 40 sources is available in the accompanying thesis document.
 
-Designed for farm managers and decision-makers.
+---
 
-It provides access to:
+## 📚 Project Documentation
 
-Farm status
-Crop health
-Predictions
-Market intelligence
-Resource information
-Alerts
-Farm DNA Score
-👨‍🌾 Worker Mobile Application
+- [CropMind Thesis / Supporting Document 1](https://drive.google.com/file/d/1BNeuJdiG533Gk9O-A25fs2bO5AF7sVtl/view)
+- [CropMind Thesis / Supporting Document 2](https://drive.google.com/file/d/1BrooaRU1-t4FO9WVyn6XrzOW6vx5CEO7/view)
 
-Designed to support field workers with:
+---
 
-Mobile access
-Field information
-Crop-related operations
-AI assistance
-Agricultural alerts
-🔬 Research Methodology
+## 📄 License
 
-The project combines several AI methodologies:
-
-Field Sensors
-     │
-     ▼
-MQTT Telemetry
-     │
-     ▼
-FastAPI Backend
-     │
-     ├───────────────┐
-     ▼               ▼
-Machine Learning   AI Agents
-     │               │
-     ├── XGBoost     ├── Farm Intelligence
-     ├── Prophet     ├── Resource Optimization
-     ├── LSTM        ├── Finance
-     └── Isolation   ├── Market Intelligence
-         Forest      ├── Inventory
-                     ├── Workforce
-                     └── Arabic Copilot
-     │
-     ▼
-Decision Support
-     │
-     ▼
-Dashboard + Mobile App + Automated Workflows
-📈 Key Contributions
-
-CropMind's main contributions include:
-
-An integrated AI operating-system architecture for smart agriculture
-Multi-agent agricultural intelligence
-Computer Vision for plant disease diagnosis
-Machine Learning-based yield prediction
-Agricultural price forecasting
-Real-time anomaly detection
-Farm DNA composite scoring
-IoT telemetry integration
-Event-driven agricultural workflow automation
-Arabic-focused agricultural AI assistance
-Unified farm, business, and market intelligence
-🔮 Future Work
-
-Future development directions include:
-
-🇪🇬 Egyptian Crop Pathology Dataset
-
-Creation of a large-scale Egyptian agricultural dataset containing:
-
-100,000+ field images
-
-captured under natural sunlight and real farming conditions.
-
-🧠 Graph Neural Networks
-
-Using GNNs for spatial crop-yield estimation across Nile Delta governorates.
-
-📈 Transformer-Based Forecasting
-
-Exploring Transformer architectures for agricultural commodity time-series forecasting.
-
-🌱 Longitudinal Farm DNA Validation
-
-Validating the Farm DNA Score across multiple seasons and commercial agricultural fields.
-
-🎙️ Arabic Voice Interface
-
-Developing hands-free Arabic speech recognition for agricultural workers.
-
-📱 Offline AI
-
-Exploring offline LLM quantization for field environments with limited connectivity.
-
-🔐 Smart Agriculture Cybersecurity
-
-Developing a zero-trust cybersecurity framework for smart-farm telemetry networks.
-
-📚 References
-
-The project is supported by academic and technical literature including:
-
-Egyptian Government, Egypt Vision 2030: Sustainable Development Strategy – Agricultural Pillar, Ministry of Planning, 2016.
-D. P. Hughes and M. Salathé, An open access repository of images on plant health, arXiv, 2015.
-T. Chen and C. Guestrin, XGBoost: A Scalable Tree Boosting System, ACM SIGKDD, 2016.
-S. J. Taylor and B. Letham, Forecasting at Scale, The American Statistician, 2018.
-F. T. Liu, K. M. Ting, and Z.-H. Zhou, Isolation Forest, IEEE ICDM, 2008.
-S. Wolfert, L. Ge, C. Verdouw, and M.-J. Bogaardt, Big Data in Smart Farming – A Review, Agricultural Systems, 2017.
-S. Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR, 2023.
-H. Chase, LangChain: Building Applications with LLMs through Composability, 2022.
-World Bank, Egypt Economic Monitor: Strengthening Resource Allocation, 2022.
-M. S. Farooq et al., A Survey on IoT-Based Smart Agriculture Technologies, IEEE Access, 2019.
-
-The complete reference list of approximately 40 sources is available in the accompanying thesis documentation.
-
-🎓 Academic Context
-
-CropMind was developed as part of a 9-Month Professional Diploma under the Applied Artificial Intelligence and Data Analytics track.
-
-The project demonstrates the integration of:
-
-Artificial Intelligence + Machine Learning + Computer Vision + IoT + Data Analytics + Automation
-
-into a unified smart agriculture platform.
-
-📄 Project Documentation
-
-Additional project documentation and presentation materials are available through the accompanying project resources.
-
-Project Presentation
-
-CropMind Presentation
-
-Project Documentation
-
-CropMind Documentation
-
-
-📜 License
-
-This project is licensed under the MIT License.
-
-See the LICENSE file for details.
-
-🌾 CropMind
-
-An Integrated AI Digital Operating System for Smart Agriculture in Egypt
-
-Artificial Intelligence • Machine Learning • Computer Vision • IoT • Predictive Analytics • Automation
+This project is licensed under the **MIT License**.
