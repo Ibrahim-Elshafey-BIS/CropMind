@@ -1,0 +1,87 @@
+/**
+ * CropMind - Global Styles
+ * Tailwind CSS with Cairo font and custom utilities
+ * 
+ * Author: CropMind Team
+ * Date: 2026
+ */
+
+/* ============================================
+   Tailwind Directives
+   ============================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   Base Layer
+   ============================================ */
+
+@layer base {
+  /* Reset and base styles */
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    /* Primary font - Cairo (Arabic-friendly) */
+    font-family: 'Cairo', 'Segoe UI', sans-serif;
+    
+    /* RTL direction for Arabic interface */
+    direction: rtl;
+    
+    /* Background and text colors */
+    @apply bg-neutral-50 text-neutral-800;
+    
+    /* Smooth font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Remove default margin and ensure full height */
+  html,
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  /* Improve link and button defaults */
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors;
+  }
+
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+}
+
+/* ============================================
+   Utility Layer - Custom Scrollbar
+   ============================================ */
+
+@layer utilities {
+  /* Thin custom scrollbar for a cleaner look */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme(colors.primary.300) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-neutral-100 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-primary-300 rounded-full transition-colors;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-400;
+  }
+}

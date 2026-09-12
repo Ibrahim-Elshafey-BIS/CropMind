@@ -1,0 +1,520 @@
+{
+  "name": "Monthly Report Email",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "monthsInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule",
+      "name": "Schedule Trigger (First Day of Month)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/farms/{{$env.FARM_ID}}/summary",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request-farm",
+      "name": "Fetch Farm Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/finance/farms/{{$env.FARM_ID}}/summary",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request-finance",
+      "name": "Fetch Finance Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 450]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/crops/farms/{{$env.FARM_ID}}/performance",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request-crops",
+      "name": "Fetch Crop Performance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 600]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/agents/finance",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "{{$env.FARM_ID}}"
+            },
+            {
+              "name": "period",
+              "value": "monthly"
+            }
+          ]
+        }
+      },
+      "id": "http-request-agent",
+      "name": "Call Finance Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 750]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/analytics/farms/{{$env.FARM_ID}}/dna-score",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request-dna",
+      "name": "Fetch Farm DNA Score",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 900]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "farm_name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "total_income",
+              "value": "={{ $json.total_income }}"
+            },
+            {
+              "name": "total_expense",
+              "value": "={{ $json.total_expense }}"
+            },
+            {
+              "name": "net_profit",
+              "value": "={{ $json.net_profit }}"
+            },
+            {
+              "name": "total_crops",
+              "value": "={{ $json.total_crops }}"
+            },
+            {
+              "name": "harvested_crops",
+              "value": "={{ $json.harvested_crops }}"
+            },
+            {
+              "name": "avg_health_score",
+              "value": "={{ $json.avg_health_score }}"
+            },
+            {
+              "name": "dna_score",
+              "value": "={{ $json.overall_score }}"
+            },
+            {
+              "name": "recommendations",
+              "value": "={{ $json.recommendations }}"
+            },
+            {
+              "name": "month",
+              "value": "={{ new Date().toLocaleString('en-US', { month: 'long' }) }}"
+            },
+            {
+              "name": "year",
+              "value": "={{ new Date().getFullYear() }}"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-extract",
+      "name": "Extract Report Data",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "subject",
+              "value": "=📊 CropMind - التقرير الشهري - {{ $json.month }} {{ $json.year }}"
+            },
+            {
+              "name": "body_ar",
+              "value": "=🌾 تقرير كروب مايند الشهري\n\nعزيزي مدير المزرعة،\n\nنقدم لك التقرير الشهري للمزرعة {{ $json.farm_name }}.\n\n📊 ملخص الأداء:\n\n🧬 درجة الحمض النووي للمزرعة: {{ $json.dna_score }}/100\n💰 إجمالي الإيرادات: {{ $json.total_income }} جنيه\n💳 إجمالي المصروفات: {{ $json.total_expense }} جنيه\n📈 صافي الربح: {{ $json.net_profit }} جنيه\n\n🌱 أداء المحاصيل:\n- إجمالي المحاصيل: {{ $json.total_crops }}\n- المحاصيل المحصودة: {{ $json.harvested_crops }}\n- متوسط صحة المحاصيل: {{ $json.avg_health_score }}/100\n\n💡 توصيات الشهر القادم:\n{{ $json.recommendations }}\n\nمع خالص التحية،\nنظام كروب مايند الذكي"
+            },
+            {
+              "name": "body_en",
+              "value": "=🌾 CropMind Monthly Report\n\nDear Farm Manager,\n\nHere is your monthly farm report for {{ $json.month }} {{ $json.year }}.\n\n📊 Performance Summary:\n\n🧬 Farm DNA Score: {{ $json.dna_score }}/100\n💰 Total Income: {{ $json.total_income }} EGP\n💳 Total Expenses: {{ $json.total_expense }} EGP\n📈 Net Profit: {{ $json.net_profit }} EGP\n\n🌱 Crop Performance:\n- Total Crops: {{ $json.total_crops }}\n- Harvested Crops: {{ $json.harvested_crops }}\n- Average Crop Health: {{ $json.avg_health_score }}/100\n\n💡 Next Month Recommendations:\n{{ $json.recommendations }}\n\nBest regards,\nCropMind AI System"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-email",
+      "name": "Format Email Content",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "{{$env.SMTP_FROM_EMAIL}}",
+        "toEmail": "{{$env.MANAGER_EMAIL}}",
+        "subject": "={{$json.subject}}",
+        "text": "={{$json.body_ar}}\n\n---\n\n{{$json.body_en}}",
+        "options": {}
+      },
+      "id": "smtp-email",
+      "name": "Send Email via SMTP",
+      "type": "n8n-nodes-base.smtp",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/reports/monthly",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "{{$env.FARM_ID}}"
+            },
+            {
+              "name": "month",
+              "value": "={{$json.month}}"
+            },
+            {
+              "name": "year",
+              "value": "={{$json.year}}"
+            },
+            {
+              "name": "report_data",
+              "value": {
+                "dna_score": "={{$json.dna_score}}",
+                "total_income": "={{$json.total_income}}",
+                "total_expense": "={{$json.total_expense}}",
+                "net_profit": "={{$json.net_profit}}",
+                "total_crops": "={{$json.total_crops}}",
+                "harvested_crops": "={{$json.harvested_crops}}",
+                "avg_health_score": "={{$json.avg_health_score}}"
+              }
+            }
+          ]
+        }
+      },
+      "id": "http-request-save",
+      "name": "Save Report to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 450]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/notifications/report",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "{{$env.FARM_ID}}"
+            },
+            {
+              "name": "title",
+              "value": "Monthly Report Generated"
+            },
+            {
+              "name": "message",
+              "value": "=Monthly report for {{$json.month}} {{$json.year}} has been generated and emailed."
+            }
+          ]
+        }
+      },
+      "id": "http-request-notification",
+      "name": "Send WebSocket Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 600]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "monthly_report"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$env.FARM_ID}}"
+            },
+            {
+              "name": "month",
+              "value": "={{$json.month}}"
+            },
+            {
+              "name": "year",
+              "value": "={{$json.year}}"
+            },
+            {
+              "name": "status",
+              "value": "completed"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{new Date().toISOString()}}"
+            },
+            {
+              "name": "message",
+              "value": "=Monthly report for {{$json.month}} {{$json.year}} sent to manager"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-log",
+      "name": "Log Action",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1050, 750]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/logs/reports",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "={{$json.action}}"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "month",
+              "value": "={{$json.month}}"
+            },
+            {
+              "name": "year",
+              "value": "={{$json.year}}"
+            },
+            {
+              "name": "status",
+              "value": "={{$json.status}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-log",
+      "name": "Save Log to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "",
+        "options": {}
+      },
+      "id": "noop-fallback",
+      "name": "No Operation (Fallback)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [650, 550]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (First Day of Month)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Farm Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Farm Summary": {
+      "main": [
+        [
+          {
+            "node": "Extract Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Finance Summary": {
+      "main": [
+        [
+          {
+            "node": "Extract Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Crop Performance": {
+      "main": [
+        [
+          {
+            "node": "Extract Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Finance Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Farm DNA Score": {
+      "main": [
+        [
+          {
+            "node": "Extract Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Report Data": {
+      "main": [
+        [
+          {
+            "node": "Format Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Email via SMTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email via SMTP": {
+      "main": [
+        [
+          {
+            "node": "Save Report to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Report to Backend": {
+      "main": [
+        [
+          {
+            "node": "Send WebSocket Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WebSocket Notification": {
+      "main": [
+        [
+          {
+            "node": "Log Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Action": {
+      "main": [
+        [
+          {
+            "node": "Save Log to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "monthly-report-email-v1",
+  "settings": {
+    "timezone": "Africa/Cairo",
+    "errorWorkflow": "error-handler"
+  },
+  "staticData": null,
+  "tags": [
+    "report",
+    "email",
+    "monthly"
+  ]
+}

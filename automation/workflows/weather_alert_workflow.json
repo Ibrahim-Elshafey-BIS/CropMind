@@ -1,0 +1,408 @@
+{
+  "name": "Weather Alert & Irrigation Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "trigger",
+      "name": "Schedule Trigger (Every 6 Hours)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lat",
+              "value": "{{ $env.WEATHER_LAT || '30.0444' }}"
+            },
+            {
+              "name": "lon",
+              "value": "{{ $env.WEATHER_LON || '31.2357' }}"
+            },
+            {
+              "name": "appid",
+              "value": "{{ $env.OPENWEATHER_API_KEY }}"
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request",
+      "name": "Fetch Weather Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "temperature",
+              "value": "={{ $json.main.temp }}"
+            },
+            {
+              "name": "humidity",
+              "value": "={{ $json.main.humidity }}"
+            },
+            {
+              "name": "condition",
+              "value": "={{ $json.weather[0].description }}"
+            },
+            {
+              "name": "wind_speed",
+              "value": "={{ $json.wind.speed }}"
+            },
+            {
+              "name": "rain",
+              "value": "={{ $json.rain ? $json.rain['1h'] : 0 }}"
+            },
+            {
+              "name": "city",
+              "value": "={{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "item-lists",
+      "name": "Extract Weather Data",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "temperature_check",
+              "leftValue": "={{ $json.temperature }}",
+              "rightValue": "35",
+              "operator": {
+                "type": "number",
+                "operation": "larger"
+              }
+            }
+          ]
+        },
+        "options": {
+          "logicalOperator": "or"
+        }
+      },
+      "id": "if-weather",
+      "name": "Check Weather Conditions",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/alerts/farms/{{ $env.FARM_ID || 1 }}",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "weather_alert"
+            },
+            {
+              "name": "severity",
+              "value": "high"
+            },
+            {
+              "name": "message",
+              "value": "Weather alert: Temperature {{ $json.temperature }}°C - {{ $json.condition }}"
+            },
+            {
+              "name": "data",
+              "value": {
+                "temperature": "={{ $json.temperature }}",
+                "humidity": "={{ $json.humidity }}",
+                "condition": "={{ $json.condition }}",
+                "wind_speed": "={{ $json.wind_speed }}",
+                "rain": "={{ $json.rain }}",
+                "city": "={{ $json.city }}"
+              }
+            }
+          ]
+        }
+      },
+      "id": "http-request-alert",
+      "name": "Send Alert to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/notifications/weather",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "{{ $env.FARM_ID || 1 }}"
+            },
+            {
+              "name": "title",
+              "value": "Weather Alert Notification"
+            },
+            {
+              "name": "message",
+              "value": "Temperature has exceeded 35°C. Irrigation schedule is being adjusted."
+            }
+          ]
+        }
+      },
+      "id": "http-request-notification",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 350]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/irrigation/schedule",
+        "method": "PUT",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "{{ $env.FARM_ID || 1 }}"
+            },
+            {
+              "name": "adjusted",
+              "value": true
+            },
+            {
+              "name": "reason",
+              "value": "weather_alert"
+            },
+            {
+              "name": "additional_water",
+              "value": "={{ ($json.temperature > 35 ? 5 : 2) }}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-irrigation",
+      "name": "Adjust Irrigation Schedule",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "weather_alert_adjustment"
+            },
+            {
+              "name": "status",
+              "value": "success"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "temperature",
+              "value": "={{ $json.temperature }}"
+            },
+            {
+              "name": "condition",
+              "value": "={{ $json.condition }}"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-log",
+      "name": "Log Action",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/logs/weather",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "log",
+              "value": "={{ $json.action }} completed for farm {{ $env.FARM_ID || 1 }}"
+            },
+            {
+              "name": "details",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-log",
+      "name": "Save Log to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 450]
+    },
+    {
+      "parameters": {
+        "workflowId": "",
+        "options": {}
+      },
+      "id": "noop",
+      "name": "No Operation (Fallback)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1050, 650]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (Every 6 Hours)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Weather Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Weather Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Weather Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Weather Data": {
+      "main": [
+        [
+          {
+            "node": "Check Weather Conditions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Weather Conditions": {
+      "main": [
+        [
+          {
+            "node": "Send Alert to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation (Fallback)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Alert to Backend": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Notification": {
+      "main": [
+        [
+          {
+            "node": "Adjust Irrigation Schedule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adjust Irrigation Schedule": {
+      "main": [
+        [
+          {
+            "node": "Log Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Action": {
+      "main": [
+        [
+          {
+            "node": "Save Log to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "weather-alert-workflow-v1",
+  "settings": {
+    "timezone": "Africa/Cairo",
+    "errorWorkflow": "error-handler"
+  },
+  "staticData": null,
+  "tags": [
+    "weather",
+    "irrigation",
+    "automation"
+  ]
+}

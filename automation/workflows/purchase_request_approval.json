@@ -1,0 +1,531 @@
+{
+  "name": "Purchase Request Approval Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "purchase-request",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/farms/{{$json.body.farm_id}}",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request-farm",
+      "name": "Fetch Farm Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "farm_id",
+              "value": "={{$json.body.farm_id}}"
+            },
+            {
+              "name": "item_name",
+              "value": "={{$json.body.item_name}}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{$json.body.quantity}}"
+            },
+            {
+              "name": "unit",
+              "value": "={{$json.body.unit}}"
+            },
+            {
+              "name": "estimated_cost",
+              "value": "={{$json.body.estimated_cost}}"
+            },
+            {
+              "name": "requested_by",
+              "value": "={{$json.body.requested_by}}"
+            },
+            {
+              "name": "reason",
+              "value": "={{$json.body.reason}}"
+            },
+            {
+              "name": "farm_name",
+              "value": "={{$json.name}}"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-extract",
+      "name": "Extract Purchase Data",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cost_check",
+              "leftValue": "={{$json.estimated_cost}}",
+              "rightValue": "5000",
+              "operator": {
+                "type": "number",
+                "operation": "larger"
+              }
+            }
+          ]
+        },
+        "options": {
+          "logicalOperator": "or"
+        }
+      },
+      "id": "if-cost",
+      "name": "Check Cost Threshold",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "subject",
+              "value": "✅ CropMind - طلب موافقة على شراء"
+            },
+            {
+              "name": "body_ar",
+              "value": "=عزيزي مدير المزرعة،\n\nيوجد طلب شراء جديد يحتاج موافقتك:\n\n📋 تفاصيل الطلب:\nالمزرعة: {{$json.farm_name}}\nالعنصر: {{$json.item_name}}\nالكمية: {{$json.quantity}} {{$json.unit}}\nالتكلفة التقديرية: {{$json.estimated_cost}} جنيه\nطلب بواسطة: {{$json.requested_by}}\nالسبب: {{$json.reason}}\n\n🔗 الرجاء الضغط على الرابط التالي للموافقة أو الرفض:\n\n✅ موافقة: http://backend:8000/api/v1/inventory/purchase-requests/approve?request_id={{$json.request_id}}&status=approved\n\n❌ رفض: http://backend:8000/api/v1/inventory/purchase-requests/approve?request_id={{$json.request_id}}&status=rejected\n\nمع خالص التحية،\nنظام كروب مايند"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-email",
+      "name": "Format Approval Email (Arabic)",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "{{$env.SMTP_FROM_EMAIL}}",
+        "toEmail": "{{$env.MANAGER_EMAIL}}",
+        "subject": "={{$json.subject}}",
+        "text": "={{$json.body_ar}}",
+        "options": {}
+      },
+      "id": "smtp-email-approval",
+      "name": "Send Approval Email",
+      "type": "n8n-nodes-base.smtp",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/inventory/purchase-requests",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "item_name",
+              "value": "={{$json.item_name}}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{$json.quantity}}"
+            },
+            {
+              "name": "unit",
+              "value": "={{$json.unit}}"
+            },
+            {
+              "name": "estimated_cost",
+              "value": "={{$json.estimated_cost}}"
+            },
+            {
+              "name": "status",
+              "value": "pending"
+            },
+            {
+              "name": "auto_approved",
+              "value": false
+            }
+          ]
+        }
+      },
+      "id": "http-request-auto-approve",
+      "name": "Create Pending Request (Manual)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 350]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/inventory/purchase-requests",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "item_name",
+              "value": "={{$json.item_name}}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{$json.quantity}}"
+            },
+            {
+              "name": "unit",
+              "value": "={{$json.unit}}"
+            },
+            {
+              "name": "estimated_cost",
+              "value": "={{$json.estimated_cost}}"
+            },
+            {
+              "name": "status",
+              "value": "approved"
+            },
+            {
+              "name": "auto_approved",
+              "value": true
+            }
+          ]
+        }
+      },
+      "id": "http-request-auto-approve-low",
+      "name": "Auto Approve Request (Low Cost)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/notifications/purchase",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "title",
+              "value": "Purchase Request Status"
+            },
+            {
+              "name": "message",
+              "value": "=Purchase request for {{$json.item_name}} has been {{$json.status}}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-notification",
+      "name": "Send WebSocket Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 350]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/agents/inventory",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "action",
+              "value": "process_purchase_request"
+            },
+            {
+              "name": "request",
+              "value": {
+                "item_name": "={{$json.item_name}}",
+                "quantity": "={{$json.quantity}}",
+                "unit": "={{$json.unit}}",
+                "estimated_cost": "={{$json.estimated_cost}}",
+                "requested_by": "={{$json.requested_by}}",
+                "status": "={{$json.status}}"
+              }
+            }
+          ]
+        }
+      },
+      "id": "http-request-agent",
+      "name": "Call Inventory Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 500]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "purchase_request"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "item_name",
+              "value": "={{$json.item_name}}"
+            },
+            {
+              "name": "status",
+              "value": "={{$json.status}}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{new Date().toISOString()}}"
+            },
+            {
+              "name": "message",
+              "value": "=Purchase request for {{$json.item_name}} processed ({{$json.status}})"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-log",
+      "name": "Log Action",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1250, 650]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/logs/purchase",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "={{$json.action}}"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "item_name",
+              "value": "={{$json.item_name}}"
+            },
+            {
+              "name": "status",
+              "value": "={{$json.status}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-log",
+      "name": "Save Log to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "",
+        "options": {}
+      },
+      "id": "noop-fallback",
+      "name": "No Operation (Fallback)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [850, 550]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Farm Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Farm Details": {
+      "main": [
+        [
+          {
+            "node": "Extract Purchase Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Purchase Data": {
+      "main": [
+        [
+          {
+            "node": "Check Cost Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Cost Threshold": {
+      "main": [
+        [
+          {
+            "node": "Format Approval Email (Arabic)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auto Approve Request (Low Cost)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Approval Email (Arabic)": {
+      "main": [
+        [
+          {
+            "node": "Create Pending Request (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Pending Request (Manual)": {
+      "main": [
+        [
+          {
+            "node": "Send Approval Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Approval Email": {
+      "main": [
+        [
+          {
+            "node": "Send WebSocket Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Approve Request (Low Cost)": {
+      "main": [
+        [
+          {
+            "node": "Send WebSocket Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WebSocket Notification": {
+      "main": [
+        [
+          {
+            "node": "Call Inventory Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Inventory Agent": {
+      "main": [
+        [
+          {
+            "node": "Log Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Action": {
+      "main": [
+        [
+          {
+            "node": "Save Log to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "purchase-request-approval-v1",
+  "settings": {
+    "timezone": "Africa/Cairo",
+    "errorWorkflow": "error-handler"
+  },
+  "staticData": null,
+  "tags": [
+    "purchase",
+    "approval",
+    "inventory"
+  ]
+}

@@ -1,0 +1,263 @@
+{
+  "name": "CropMind - Farm Analytics Dashboard",
+  "version": "1.0.0",
+  "description": "Power BI dashboard configuration for CropMind farm management system",
+  "dataset": {
+    "connection": {
+      "type": "PostgreSQL",
+      "server": "localhost",
+      "port": 5432,
+      "database": "cropmind",
+      "schema": "public"
+    },
+    "tables": [
+      {
+        "name": "farms",
+        "columns": [
+          "id", "name", "location", "area", "crop_type", "is_active", "created_at"
+        ],
+        "key": "id"
+      },
+      {
+        "name": "crops",
+        "columns": [
+          "id", "farm_id", "name", "variety", "area", "planting_date",
+          "expected_harvest_date", "status", "health_score", "created_at"
+        ],
+        "key": "id",
+        "foreign_key": "farm_id"
+      },
+      {
+        "name": "transactions",
+        "columns": [
+          "id", "farm_id", "type", "category", "amount", "description", "date"
+        ],
+        "key": "id",
+        "foreign_key": "farm_id"
+      },
+      {
+        "name": "workers",
+        "columns": [
+          "id", "farm_id", "full_name", "role", "daily_wage", "is_active", "hire_date"
+        ],
+        "key": "id",
+        "foreign_key": "farm_id"
+      },
+      {
+        "name": "sensor_readings",
+        "columns": [
+          "id", "farm_id", "sensor_id", "type", "value", "unit", "is_anomaly", "timestamp"
+        ],
+        "key": "id",
+        "foreign_key": "farm_id"
+      },
+      {
+        "name": "market_prices",
+        "columns": [
+          "id", "commodity", "price", "min_price", "max_price", "unit", "market_name", "date"
+        ],
+        "key": "id"
+      }
+    ]
+  },
+  "measures": [
+    {
+      "name": "Total Income",
+      "expression": "CALCULATE(SUM(transactions[amount]), transactions[type] = 'income')",
+      "format": "Currency",
+      "description": "Total income from all transactions"
+    },
+    {
+      "name": "Total Expense",
+      "expression": "CALCULATE(SUM(transactions[amount]), transactions[type] = 'expense')",
+      "format": "Currency",
+      "description": "Total expenses from all transactions"
+    },
+    {
+      "name": "Net Profit",
+      "expression": "CALCULATE(SUM(transactions[amount]), transactions[type] = 'income') - CALCULATE(SUM(transactions[amount]), transactions[type] = 'expense')",
+      "format": "Currency",
+      "description": "Net profit = Total Income - Total Expense"
+    },
+    {
+      "name": "Average Crop Health",
+      "expression": "AVERAGE(crops[health_score])",
+      "format": "Percentage",
+      "description": "Average health score of all crops"
+    },
+    {
+      "name": "Active Workers Count",
+      "expression": "CALCULATE(COUNT(workers[id]), workers[is_active] = TRUE)",
+      "format": "Integer",
+      "description": "Number of active workers"
+    },
+    {
+      "name": "Anomaly Count",
+      "expression": "CALCULATE(COUNT(sensor_readings[id]), sensor_readings[is_anomaly] = TRUE)",
+      "format": "Integer",
+      "description": "Number of anomalous sensor readings"
+    },
+    {
+      "name": "Total Crops",
+      "expression": "COUNT(crops[id])",
+      "format": "Integer",
+      "description": "Total number of crops"
+    },
+    {
+      "name": "Growing Crops",
+      "expression": "CALCULATE(COUNT(crops[id]), crops[status] = 'growing')",
+      "format": "Integer",
+      "description": "Number of growing crops"
+    },
+    {
+      "name": "Harvested Crops",
+      "expression": "CALCULATE(COUNT(crops[id]), crops[status] = 'harvested')",
+      "format": "Integer",
+      "description": "Number of harvested crops"
+    },
+    {
+      "name": "Transaction Count",
+      "expression": "COUNT(transactions[id])",
+      "format": "Integer",
+      "description": "Total number of transactions"
+    }
+  ],
+  "visuals": [
+    {
+      "id": "farm_dna_score",
+      "type": "card",
+      "title": "Farm DNA Score",
+      "measure": "Average Crop Health",
+      "icon": "🧬",
+      "position": {"x": 0, "y": 0, "width": 2, "height": 1}
+    },
+    {
+      "id": "total_income",
+      "type": "card",
+      "title": "Total Income",
+      "measure": "Total Income",
+      "icon": "💰",
+      "position": {"x": 2, "y": 0, "width": 2, "height": 1}
+    },
+    {
+      "id": "total_expense",
+      "type": "card",
+      "title": "Total Expenses",
+      "measure": "Total Expense",
+      "icon": "💳",
+      "position": {"x": 4, "y": 0, "width": 2, "height": 1}
+    },
+    {
+      "id": "net_profit",
+      "type": "card",
+      "title": "Net Profit",
+      "measure": "Net Profit",
+      "icon": "📈",
+      "position": {"x": 6, "y": 0, "width": 2, "height": 1}
+    },
+    {
+      "id": "revenue_chart",
+      "type": "line_chart",
+      "title": "Revenue vs Expenses",
+      "data": {
+        "axis": "transactions[date]",
+        "values": ["Total Income", "Total Expense"]
+      },
+      "position": {"x": 0, "y": 1, "width": 4, "height": 2}
+    },
+    {
+      "id": "crop_health_gauge",
+      "type": "gauge",
+      "title": "Crop Health",
+      "measure": "Average Crop Health",
+      "min": 0,
+      "max": 100,
+      "position": {"x": 4, "y": 1, "width": 2, "height": 2}
+    },
+    {
+      "id": "crop_status",
+      "type": "pie_chart",
+      "title": "Crop Status Distribution",
+      "data": {
+        "category": "crops[status]",
+        "values": ["Total Crops"]
+      },
+      "position": {"x": 6, "y": 1, "width": 2, "height": 2}
+    },
+    {
+      "id": "top_expenses",
+      "type": "bar_chart",
+      "title": "Top Expenses by Category",
+      "data": {
+        "axis": "transactions[category]",
+        "values": ["Total Expense"]
+      },
+      "filter": {"type": "expense"},
+      "position": {"x": 0, "y": 3, "width": 3, "height": 2}
+    },
+    {
+      "id": "top_income",
+      "type": "bar_chart",
+      "title": "Top Income Sources",
+      "data": {
+        "axis": "transactions[category]",
+        "values": ["Total Income"]
+      },
+      "filter": {"type": "income"},
+      "position": {"x": 3, "y": 3, "width": 3, "height": 2}
+    },
+    {
+      "id": "market_prices",
+      "type": "table",
+      "title": "Market Prices",
+      "columns": ["commodity", "price", "min_price", "max_price", "market_name", "date"],
+      "position": {"x": 6, "y": 3, "width": 2, "height": 2}
+    },
+    {
+      "id": "workers_activity",
+      "type": "bar_chart",
+      "title": "Workers Activity",
+      "data": {
+        "axis": "workers[role]",
+        "values": ["Active Workers Count"]
+      },
+      "position": {"x": 0, "y": 5, "width": 2, "height": 1}
+    },
+    {
+      "id": "anomaly_trend",
+      "type": "line_chart",
+      "title": "Sensor Anomalies Over Time",
+      "data": {
+        "axis": "sensor_readings[timestamp]",
+        "values": ["Anomaly Count"]
+      },
+      "position": {"x": 2, "y": 5, "width": 4, "height": 1}
+    },
+    {
+      "id": "farm_summary",
+      "type": "table",
+      "title": "Farm Summary",
+      "columns": ["name", "location", "area", "crop_type", "Average Crop Health", "Active Workers Count"],
+      "position": {"x": 6, "y": 5, "width": 2, "height": 1}
+    }
+  ],
+  "filters": [
+    {
+      "name": "Farm Filter",
+      "type": "dropdown",
+      "column": "farms[name]",
+      "description": "Select a farm to filter dashboard"
+    },
+    {
+      "name": "Date Range",
+      "type": "daterange",
+      "column": "transactions[date]",
+      "description": "Filter by transaction date range"
+    }
+  ],
+  "refresh_schedule": {
+    "enabled": true,
+    "frequency": "daily",
+    "time": "00:00"
+  }
+}

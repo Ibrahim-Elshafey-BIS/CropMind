@@ -1,0 +1,40 @@
+{
+  "average_mape": 8.4,
+  "target_mape": 15,
+  "achieved": true,
+  "crops": {
+    "Cotton": {
+      "model_type": "prophet",
+      "mape": 10.02
+    },
+    "Rice": {
+      "model_type": "prophet",
+      "mape": 4.96
+    },
+    "Sugarcane": {
+      "model_type": "prophet",
+      "mape": 9.09
+    },
+    "Wheat": {
+      "model_type": "prophet",
+      "mape": 7.59
+    },
+    "Onion": {
+      "model_type": "gbm",
+      "mape": 10.08
+    },
+    "Potato": {
+      "model_type": "gbm",
+      "mape": 5.42
+    },
+    "Tomato": {
+      "model_type": "gbm",
+      "mape": 11.13
+    },
+    "Maize": {
+      "model_type": "gbm",
+      "mape": 8.96
+    }
+  },
+  "df_clean_years": "2005-2019"
+}

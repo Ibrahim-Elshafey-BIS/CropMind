@@ -1,0 +1,478 @@
+{
+  "name": "Disease Risk Detection & WhatsApp Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "disease-risk",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/sensor-readings/latest",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "={{ $json.farm_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request-sensors",
+      "name": "Fetch Latest Sensor Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "farm_id",
+              "value": "={{ $json.farm_id }}"
+            },
+            {
+              "name": "crop_id",
+              "value": "={{ $json.crop_id }}"
+            },
+            {
+              "name": "crop_name",
+              "value": "={{ $json.crop_name }}"
+            },
+            {
+              "name": "health_score",
+              "value": "={{ $json.health_score }}"
+            },
+            {
+              "name": "temperature",
+              "value": "={{ $json.sensors.temperature }}"
+            },
+            {
+              "name": "humidity",
+              "value": "={{ $json.sensors.humidity }}"
+            },
+            {
+              "name": "soil_moisture",
+              "value": "={{ $json.sensors.soil_moisture }}"
+            },
+            {
+              "name": "ph",
+              "value": "={{ $json.sensors.ph }}"
+            },
+            {
+              "name": "is_anomaly",
+              "value": "={{ $json.sensors.is_anomaly }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "item-lists-extract",
+      "name": "Extract Sensor Data",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "health_check",
+              "leftValue": "={{ $json.health_score }}",
+              "rightValue": "50",
+              "operator": {
+                "type": "number",
+                "operation": "smaller"
+              }
+            }
+          ]
+        },
+        "options": {
+          "logicalOperator": "or"
+        }
+      },
+      "id": "if-health",
+      "name": "Check Health Score",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/agents/farm-intelligence/analyze",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "={{ $json.farm_id }}"
+            },
+            {
+              "name": "crop_id",
+              "value": "={{ $json.crop_id }}"
+            },
+            {
+              "name": "sensor_data",
+              "value": {
+                "temperature": "={{ $json.temperature }}",
+                "humidity": "={{ $json.humidity }}",
+                "soil_moisture": "={{ $json.soil_moisture }}",
+                "ph": "={{ $json.ph }}"
+              }
+            }
+          ]
+        }
+      },
+      "id": "http-request-ai",
+      "name": "Call Farm Intelligence AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "disease_detected",
+              "value": "={{ $json.disease_detected }}"
+            },
+            {
+              "name": "recommendation",
+              "value": "={{ $json.recommendation }}"
+            },
+            {
+              "name": "severity",
+              "value": "={{ $json.severity }}"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-ai",
+      "name": "Extract AI Response",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "=🚨 تنبيه كروب مايند\n\nتم اكتشاف خطر مرض في مزرعتك:\n\n🌾 المحصول: {{$json.crop_name}}\n📊 درجة الصحة: {{$json.health_score}}/100\n🦠 المرض المحتمل: {{$json.disease_detected}}\n⚠️ الخطورة: {{$json.severity}}\n\n💡 التوصية:\n{{$json.recommendation}}\n\n📅 التاريخ: {{new Date().toLocaleDateString('ar-EG')}}\n\nللمزيد من التفاصيل، يرجى فتح تطبيق كروب مايند."
+            }
+          ]
+        }
+      },
+      "id": "item-lists-message",
+      "name": "Format WhatsApp Message",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.twilio.com/2010-04-01/Accounts/{{$env.TWILIO_ACCOUNT_SID}}/Messages.json",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "From",
+              "value": "whatsapp:{{$env.TWILIO_WHATSAPP_FROM}}"
+            },
+            {
+              "name": "To",
+              "value": "whatsapp:{{$env.FARMER_WHATSAPP_TO}}"
+            },
+            {
+              "name": "Body",
+              "value": "={{$json.message}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-request-whatsapp",
+      "name": "Send WhatsApp via Twilio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/crops/{{$json.crop_id}}/health",
+        "method": "PUT",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "health_score",
+              "value": "={{$json.health_score}}"
+            },
+            {
+              "name": "disease_detected",
+              "value": "={{$json.disease_detected}}"
+            },
+            {
+              "name": "status",
+              "value": "={{$json.disease_detected ? 'at_risk' : 'growing'}}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-update",
+      "name": "Update Crop Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1650, 450]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "disease_risk_detected"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "crop_id",
+              "value": "={{$json.crop_id}}"
+            },
+            {
+              "name": "status",
+              "value": "completed"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{new Date().toISOString()}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-log",
+      "name": "Log Action",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1650, 600]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/logs/disease-risk",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "={{$json.action}}"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "crop_id",
+              "value": "={{$json.crop_id}}"
+            },
+            {
+              "name": "status",
+              "value": "={{$json.status}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-log",
+      "name": "Save Log to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1850, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "",
+        "options": {}
+      },
+      "id": "noop-fallback",
+      "name": "No Operation (Fallback)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1050, 600]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Latest Sensor Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Latest Sensor Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Sensor Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Sensor Data": {
+      "main": [
+        [
+          {
+            "node": "Check Health Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Health Score": {
+      "main": [
+        [
+          {
+            "node": "Call Farm Intelligence AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation (Fallback)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Farm Intelligence AI": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract AI Response": {
+      "main": [
+        [
+          {
+            "node": "Format WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp via Twilio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp via Twilio": {
+      "main": [
+        [
+          {
+            "node": "Update Crop Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Crop Health": {
+      "main": [
+        [
+          {
+            "node": "Log Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Action": {
+      "main": [
+        [
+          {
+            "node": "Save Log to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "disease-risk-whatsapp-v1",
+  "settings": {
+    "timezone": "Africa/Cairo",
+    "errorWorkflow": "error-handler"
+  },
+  "staticData": null,
+  "tags": [
+    "disease",
+    "whatsapp",
+    "alert"
+  ]
+}

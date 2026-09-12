@@ -1,0 +1,475 @@
+{
+  "name": "Low Inventory Alert & Reporting",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule",
+      "name": "Schedule Trigger (Every 12 Hours)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/inventory/farms/{{$env.FARM_ID}}",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-request-inventory",
+      "name": "Fetch Inventory Items",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "low_stock_check",
+              "leftValue": "={{ $json.quantity }}",
+              "rightValue": "={{ $json.min_quantity }}",
+              "operator": {
+                "type": "number",
+                "operation": "smaller"
+              }
+            }
+          ]
+        },
+        "options": {
+          "logicalOperator": "or"
+        }
+      },
+      "id": "if-low-stock",
+      "name": "Check Low Stock",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "item_name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{ $json.quantity }}"
+            },
+            {
+              "name": "min_quantity",
+              "value": "={{ $json.min_quantity }}"
+            },
+            {
+              "name": "unit",
+              "value": "={{ $json.unit }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.category }}"
+            },
+            {
+              "name": "price_per_unit",
+              "value": "={{ $json.price_per_unit }}"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-extract",
+      "name": "Extract Inventory Data",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/alerts/farms/{{$env.FARM_ID}}",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "low_stock"
+            },
+            {
+              "name": "severity",
+              "value": "={{ $json.quantity === 0 ? 'critical' : ($json.quantity < $json.min_quantity * 0.5 ? 'high' : 'medium') }}"
+            },
+            {
+              "name": "message",
+              "value": "=Low stock alert: {{ $json.item_name }} ({{ $json.quantity }} {{ $json.unit }} remaining, minimum {{ $json.min_quantity }} {{ $json.unit }})"
+            },
+            {
+              "name": "data",
+              "value": {
+                "item_name": "={{ $json.item_name }}",
+                "quantity": "={{ $json.quantity }}",
+                "min_quantity": "={{ $json.min_quantity }}",
+                "unit": "={{ $json.unit }}",
+                "category": "={{ $json.category }}",
+                "price_per_unit": "={{ $json.price_per_unit }}",
+                "shortage": "={{ $json.min_quantity - $json.quantity }}"
+              }
+            }
+          ]
+        }
+      },
+      "id": "http-request-alert",
+      "name": "Send Alert to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/notifications/inventory",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "{{$env.FARM_ID}}"
+            },
+            {
+              "name": "title",
+              "value": "Low Inventory Alert"
+            },
+            {
+              "name": "message",
+              "value": "=Low stock alert: {{ $json.item_name }} ({{ $json.quantity }} {{ $json.unit }} remaining)"
+            },
+            {
+              "name": "severity",
+              "value": "={{ $json.quantity === 0 ? 'critical' : ($json.quantity < $json.min_quantity * 0.5 ? 'high' : 'medium') }}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-notification",
+      "name": "Send WebSocket Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 350]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/agents/inventory",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "farm_id",
+              "value": "{{$env.FARM_ID}}"
+            },
+            {
+              "name": "action",
+              "value": "analyze_low_stock"
+            },
+            {
+              "name": "items",
+              "value": [
+                {
+                  "item_name": "={{ $json.item_name }}",
+                  "quantity": "={{ $json.quantity }}",
+                  "min_quantity": "={{ $json.min_quantity }}",
+                  "unit": "={{ $json.unit }}",
+                  "category": "={{ $json.category }}"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "id": "http-request-agent",
+      "name": "Call Inventory Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "subject",
+              "value": "⚠️ CropMind - Low Inventory Alert"
+            },
+            {
+              "name": "body_en",
+              "value": "=Dear Farm Manager,\n\nThis is an automated alert from CropMind AI System.\n\nThe following inventory item is running low:\n\nItem: {{ $json.item_name }}\nCategory: {{ $json.category }}\nCurrent Quantity: {{ $json.quantity }} {{ $json.unit }}\nMinimum Required: {{ $json.min_quantity }} {{ $json.unit }}\nShortage: {{ $json.min_quantity - $json.quantity }} {{ $json.unit }}\n\nRecommendation: Please reorder immediately.\n\nBest regards,\nCropMind AI System"
+            },
+            {
+              "name": "body_ar",
+              "value": "=عزيزي مدير المزرعة،\n\nهذا تنبيه تلقائي من نظام كروب مايند الذكي.\n\nالمخزون التالي منخفض:\n\nالعنصر: {{ $json.item_name }}\nالتصنيف: {{ $json.category }}\nالكمية الحالية: {{ $json.quantity }} {{ $json.unit }}\nالحد الأدنى: {{ $json.min_quantity }} {{ $json.unit }}\nالنقص: {{ $json.min_quantity - $json.quantity }} {{ $json.unit }}\n\nالتوصية: يرجى إعادة الطلب فوراً.\n\nمع خالص التحية،\nنظام كروب مايند"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-email",
+      "name": "Format Email Content",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "{{$env.SMTP_FROM_EMAIL}}",
+        "toEmail": "{{$env.MANAGER_EMAIL}}",
+        "subject": "={{$json.subject}}",
+        "text": "={{$json.body_en}}\n\n---\n\n{{$json.body_ar}}",
+        "options": {}
+      },
+      "id": "smtp-email",
+      "name": "Send Email via SMTP",
+      "type": "n8n-nodes-base.smtp",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "low_inventory_alert"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$env.FARM_ID}}"
+            },
+            {
+              "name": "item_name",
+              "value": "={{$json.item_name}}"
+            },
+            {
+              "name": "status",
+              "value": "completed"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{new Date().toISOString()}}"
+            },
+            {
+              "name": "message",
+              "value": "=Alert sent for {{ $json.item_name }} ({{ $json.quantity }} {{ $json.unit }} remaining)"
+            }
+          ]
+        }
+      },
+      "id": "item-lists-log",
+      "name": "Log Action",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [1450, 450]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/logs/inventory",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "={{$json.action}}"
+            },
+            {
+              "name": "farm_id",
+              "value": "={{$json.farm_id}}"
+            },
+            {
+              "name": "item_name",
+              "value": "={{$json.item_name}}"
+            },
+            {
+              "name": "status",
+              "value": "={{$json.status}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        }
+      },
+      "id": "http-request-log",
+      "name": "Save Log to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "",
+        "options": {}
+      },
+      "id": "noop-fallback",
+      "name": "No Operation (Fallback)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [850, 550]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (Every 12 Hours)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Inventory Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Inventory Items": {
+      "main": [
+        [
+          {
+            "node": "Check Low Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Low Stock": {
+      "main": [
+        [
+          {
+            "node": "Extract Inventory Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation (Fallback)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Inventory Data": {
+      "main": [
+        [
+          {
+            "node": "Send Alert to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Alert to Backend": {
+      "main": [
+        [
+          {
+            "node": "Send WebSocket Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WebSocket Notification": {
+      "main": [
+        [
+          {
+            "node": "Call Inventory Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Inventory Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Email via SMTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email via SMTP": {
+      "main": [
+        [
+          {
+            "node": "Log Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Action": {
+      "main": [
+        [
+          {
+            "node": "Save Log to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "low-inventory-alert-v1",
+  "settings": {
+    "timezone": "Africa/Cairo",
+    "errorWorkflow": "error-handler"
+  },
+  "staticData": null,
+  "tags": [
+    "inventory",
+    "alert",
+    "email"
+  ]
+}
