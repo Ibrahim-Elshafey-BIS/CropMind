@@ -357,17 +357,6 @@ CropMind/
 
 ---
 
-## 🎓 Academic Context
-
-| Field | Details |
-|---|---|
-| **Project Type** | 9-Month Professional Diploma Project |
-| **Track** | Applied Artificial Intelligence and Data Analytics |
-| **Supervisor** | Dr. Ali Khalifa |
-| **Track Head** | *Not specified* |
-
----
-
 ## 📖 References
 
 1. Egyptian Government, "Egypt Vision 2030: Sustainable Development Strategy – Agricultural Pillar," Ministry of Planning, 2016.
